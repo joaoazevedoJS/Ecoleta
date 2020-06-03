@@ -1,9 +1,9 @@
 import Knex from 'knex'
 
-export async function up(knew: Knex) {
+export async function up(knex: Knex) {
   // Criar
 
-  return knew.schema.createTable('points', table => {
+  return knex.schema.createTable('points', table => {
     table.increments('id').primary();
     table.string('image').notNullable()
     table.string('name').notNullable()
