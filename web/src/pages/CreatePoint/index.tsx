@@ -10,6 +10,8 @@ import api from '../../services/api'
 import './style.css'
 import logo from '../../assets/logo.svg'
 
+import Dropzone from '../../components/Dropzone'
+
 // array ou object: manualmente informar o tipo da variavel
 
 interface Item {
@@ -36,7 +38,6 @@ const CreatePoint = () => {
     name: '',
     email: '',
     whatsapp: '',
-    numbering: 0,
   })
 
   const [initialPosition, setInitialPosition] = useState<[number, number]>([0, 0])
@@ -45,7 +46,7 @@ const CreatePoint = () => {
   const [selectedCity, setSelectedCity] = useState<string>('0')
   const [selectedPosition, setSelectedPosition] = useState<[number, number]>([0, 0])
   const [selectedItems, setSelectedItems] = useState<number[]>([])
-
+  const [selectedFile, setSelectedFile] = useState<File>()
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(position => {
@@ -104,34 +105,37 @@ const CreatePoint = () => {
   function handleSelectItem(id: number) {
     const alreadySelected = selectedItems.findIndex(item => item === id)
 
-    if(alreadySelected >= 0 ) {
+    if (alreadySelected >= 0) {
       const filteredItems = selectedItems.filter(item => item !== id)
 
       setSelectedItems(filteredItems)
     } else {
-      setSelectedItems([ ...selectedItems, id ])
+      setSelectedItems([...selectedItems, id])
     }
   }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const { name, email, whatsapp, numbering } = formData
+    const { name, email, whatsapp } = formData
     const uf = selectedUf
     const city = selectedCity
-    const [ latitude, longitude ] = selectedPosition
+    const [latitude, longitude] = selectedPosition
     const items = selectedItems
 
-    const data = {
-      name,
-      email,
-      whatsapp,
-      numbering,
-      uf,
-      city,
-      latitude,
-      longitude,
-      items
+    const data = new FormData()
+
+    data.append('name', name);
+    data.append('email', email);
+    data.append('whatsapp', whatsapp);
+    data.append('uf', uf);
+    data.append('city', city);
+    data.append('latitude', String(latitude));
+    data.append('longitude', String(longitude));
+    data.append('items', items.join(','));
+
+    if(selectedFile) {
+      data.append('image', selectedFile)
     }
 
     await api.post('points', data)
@@ -155,6 +159,8 @@ const CreatePoint = () => {
 
       <form onSubmit={handleSubmit}>
         <h1>Cadastro do <br /> ponto de coleta.</h1>
+
+        <Dropzone onFileUploade={setSelectedFile} />
 
         <fieldset>
           <legend>
@@ -209,7 +215,7 @@ const CreatePoint = () => {
             <Marker position={selectedPosition} />
           </Map>
 
-          <div className="field-group-3">
+          <div className="field-group">
             <div className="field">
               <label htmlFor="uf">Estado</label>
               <select
@@ -238,19 +244,6 @@ const CreatePoint = () => {
                   <option value={city} key={city}>{city}</option>
                 ))}
               </select>
-            </div>
-
-            <div className="field-group">
-              <div className="field">
-                <label htmlFor="numbering">Número</label>
-                <input
-                  type="number"
-                  name="numbering"
-                  id="numbering"
-                  min="0"
-                  onChange={handleInputChange}
-                />
-              </div>
             </div>
           </div>
         </fieldset>
